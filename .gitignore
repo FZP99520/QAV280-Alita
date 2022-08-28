@@ -1,6 +1,15 @@
 # Prerequisites
 *.d
 
+# add for project file
+*.crf
+*.d
+*.lst
+*.feng
+*.htm
+*.uvoptx
+*.uvprojx
+
 # Object files
 *.o
 *.ko
