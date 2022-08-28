@@ -15,6 +15,7 @@
 *.scvd
 *.dbgconf
 *.bat
+*.ini
 
 # Object files
 *.o
