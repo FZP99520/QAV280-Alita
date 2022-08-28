@@ -14,9 +14,7 @@
 *.lnp
 *.scvd
 *.dbgconf
-
-
-
+.bat
 
 # Object files
 *.o
