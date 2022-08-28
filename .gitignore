@@ -9,6 +9,14 @@
 *.htm
 *.uvoptx
 *.uvprojx
+*.FengZipeng
+*.dep
+*.lnp
+*.scvd
+*.dbgconf
+
+
+
 
 # Object files
 *.o
