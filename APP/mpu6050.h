@@ -4,6 +4,7 @@
 
 #include "stm32f10x.h"
 #include "filter.h"
+#include "device.h"
 
 #define  AccelLSB          8192u
 #define  AccelCoefficient  0.000122f // 1/8192
@@ -11,18 +12,16 @@
 #define  GyroCoefficient   0.030f //1/32.8
 #define  Range_Acc_Setting 8192u
 
-typedef enum
+typedef struct IMU_Data_TypeDef_s
 {
-    E_Offset_Min,
-    E_OffsetReq,
-    E_OffsetFinish,
-    E_Offset_NumMax
-}E_Device_Status_TypeDef;
-
-typedef struct
-{
-    E_Device_Status_TypeDef eAccel_Offset_Status;
-    E_Device_Status_TypeDef eGyro_Offset_Status;
+    E_DevInit_Status_TypeDef eAccelInit_Status;
+    E_DevInit_Status_TypeDef eGyroInit_Status;
+    E_DevCali_Status_TypeDef eAccelCali_Status;
+    E_DevCali_Status_TypeDef eGyroCali_Status;
+    E_DevReadWrite_Ret_TypeDef eAccelGyro_Read_Ret;
+    E_DevReadWrite_Ret_TypeDef eAccelGyro_Write_Ret;
+    u8  bGet_ORG_DataOK;
+    u8  bGet_QuatOK;
     s16 s16ACCEL_X;
     s16 s16ACCEL_Y;
     s16 s16ACCEL_Z;
@@ -42,12 +41,13 @@ typedef struct
     float fgx;
     float fgy;
     float fgz;
-}IMU_Data_TypeDef;
+}MPU_Data_TypeDef;
 
-extern IMU_Data_TypeDef gsIMU_Data;
+extern MPU_Data_TypeDef gsMPU_Data;
 
-u8 MPU6050_Init(void);//陀螺仪初始化，同时初始化IIC
-void IMU_Data_Update(void);
+E_DevInit_Status_TypeDef MPU6050_Init(void);//陀螺仪初始化，同时初始化IIC
+E_DevUpdate_Ret_TypeDef MPU_Data_Update(void);
+
 
 extern MoveAvarageFilter_TypeDef Filter_Acc_X;
 extern MoveAvarageFilter_TypeDef Filter_Acc_Y;

@@ -12,13 +12,22 @@
 #include "RC.h"
 #include "log.h"
 
+#ifndef TRUE
 #define TRUE  (1)
+#endif
+
+#ifndef FALSE
 #define FALSE (0)
+#endif
 
 #define Ka 0.08f
-IMU_Data_TypeDef gsIMU_Data;
+MPU_Data_TypeDef gsMPU_Data =
+{
+    .eAccelCali_Status = E_DevCali_Null;
+};
 #define  GyroOffsetNum   200
 #define  AccelOffsetNum  200
+
 //define Accelerate move average struct
 MoveAvarageFilter_TypeDef Filter_Acc_X={8,0,0,{0}};
 MoveAvarageFilter_TypeDef Filter_Acc_Y={8,0,0,{0}};
@@ -30,109 +39,134 @@ MoveAvarageFilter_TypeDef Filter_Gyro_Z={4,0,0,{0}};
 
 float Pitch,Roll,Yaw; 
 
-static int MPU6050_RD_Buff(u8 addr,u8 size,u8* pBuff);
-static void MPU_RD_ACCEL_GYRO(IMU_Data_TypeDef* imu_data);
-static u8 MPU_GET_ACCEL_OFFSET(IMU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller);
-static u8 MPU_GET_GYRO_OFFSET(IMU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller);
+static E_DevReadWrite_Ret_TypeDef _MPU_RD_Buff(u8 addr,u8 size,u8* pBuff);
+static E_DevReadWrite_Ret_TypeDef _MPU_RD_ACCEL_GYRO(MPU_Data_TypeDef* pMPU);
 
-static int MPU6050_Write_Data(u8 addr,u8 data);
-static int MPU6050_Read_Data(u8 addr,u8* pData);
+static E_DevCali_Status_TypeDef _MPU_GET_ACCEL_OFFSET(MPU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller);
+static E_DevCali_Status_TypeDef _MPU_GET_GYRO_OFFSET(MPU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller);
 
-u8 temp;
-u8 MPU6050_Init(void) //初始化
+static E_DevReadWrite_Ret_TypeDef _MPU_Write_Data(u8 addr,u8 data);
+static E_DevReadWrite_Ret_TypeDef _MPU_Read_Data(u8 addr,u8* pData);
+
+
+E_DevInit_Status_TypeDef MPU6050_Init(void) //初始化
 {
+    u8 temp;
     u8 dev_id;
-    MPU6050_Read_Data(WHO_AM_I,&dev_id);
+    _MPU_Read_Data(WHO_AM_I,&dev_id);
     if(dev_id != 0x68 )
     {
-      DebugLog("[ERROR]MPU6050 Init Fail:Device ID != 0x68\n");
-      return 0;
+      //DebugLog("[ERROR]MPU6050 Init Fail:Device ID != 0x68\n");
+      return E_DevInit_Status_Fail;
     }
-    MPU6050_Write_Data(PWR_MGMT_1, 0x80);//复位
+    _MPU_Write_Data(PWR_MGMT_1, 0x80);//复位
     Delay_ms(100);
-    MPU6050_Write_Data(PWR_MGMT_1, 0x0b);//使用Z gyro轴作为参考时钟
+    _MPU_Write_Data(PWR_MGMT_1, 0x0b);//使用Z gyro轴作为参考时钟
     Delay_ms(100);
-    MPU6050_Write_Data(SMPLRT_DIV, 0x01);//Sample Rate=1Khz/(1+2) =500Hz T = 2ms output rate
+    _MPU_Write_Data(SMPLRT_DIV, 0x01);//Sample Rate=1Khz/(1+2) =500Hz T = 2ms output rate
 
-    MPU6050_Write_Data(CONFIG, 0x02); //DLPF Accel:Bandwidth 94Hz delay3ms Gyro:Bandwidth 98Hz delay 2.8ms
+    _MPU_Write_Data(CONFIG, 0x02); //DLPF Accel:Bandwidth 94Hz delay3ms Gyro:Bandwidth 98Hz delay 2.8ms
 
-    MPU6050_Write_Data(GYRO_CONFIG, 0x10);//设置量程+-1000deg/s
+    _MPU_Write_Data(GYRO_CONFIG, 0x10);//设置量程+-1000deg/s
 
-    MPU6050_Write_Data(ACCEL_CONFIG, 0x08);//+-4g
-    MPU6050_Read_Data(ACCEL_CONFIG,&temp);
+    _MPU_Write_Data(ACCEL_CONFIG, 0x08);//+-4g
+    _MPU_Read_Data(ACCEL_CONFIG,&temp);
 
-    MPU6050_Write_Data(FIFO_EN,0x00);//Disable fifo
-    MPU6050_Write_Data(INT_EN,0x00);//Disable interrupt
+    _MPU_Write_Data(FIFO_EN,0x00);//Disable fifo
+    _MPU_Write_Data(INT_EN,0x00);//Disable interrupt
 
-    MPU6050_Write_Data(INT_EN,0x00);  //设置中断,closed
-    DebugLog("[OK]MPU6050 Init OK~\n");
-    return TRUE;
+    _MPU_Write_Data(INT_EN,0x00);  //设置中断,closed
+    //DebugLog("[OK]MPU6050 Init OK~\n");
+
+    return E_DevInit_Status_Done;
 }
-void IMU_Data_Update(void)
+E_DevUpdate_Ret_TypeDef MPU_Data_Update(void)
 {
-    u8 bRet;
-    MPU_RD_ACCEL_GYRO(&gsIMU_Data); //Read data from mpu6050 first
-    if(gsIMU_Data.eAccel_Offset_Status == E_OffsetReq || gsIMU_Data.eGyro_Offset_Status == E_OffsetReq)//需要校准时不做四元数解算
+    E_DevReadWrite_Ret_TypeDef eDevRW_Ret;
+
+    eDevRW_Ret = _MPU_RD_ACCEL_GYRO(&gsMPU_Data); //Read data from mpu6050 first
+    if(eDevRW_Ret != E_DevReadWrite_Ret_Ok)
     {
-        if(gsIMU_Data.eAccel_Offset_Status == E_OffsetReq)
+        gsMPU_Data.bGet_ORG_DataOK = FALSE;
+        return E_DevUpdate_Fail;
+    }
+    if(gsMPU_Data.eAccelCali_Status == E_DevCali_Req || gsMPU_Data.eAccelCali_Status == E_DevCali_Doing \
+        gsMPU_Data.eGyroCali_Status == E_DevCali_Req || gsMPU_Data.eGyroCali_Status == E_DevCali_Doing)
+    {
+        if(gsMPU_Data.eAccelCali_Status == E_DevCali_Req || gsMPU_Data.eAccelCali_Status == E_DevCali_Doing)
         {
-            MPU_GET_ACCEL_OFFSET(&gsIMU_Data,TRUE,TRUE);
+            _MPU_GET_ACCEL_OFFSET(&gsMPU_Data,TRUE,TRUE);
         }
-        if(gsIMU_Data.eGyro_Offset_Status == E_OffsetReq)
+        if(gsMPU_Data.eGyroCali_Status == E_DevCali_Req || gsMPU_Data.eGyroCali_Status == E_DevCali_Doing)
         {
-            MPU_GET_GYRO_OFFSET(&gsIMU_Data,TRUE,TRUE);
+            _MPU_GET_GYRO_OFFSET(&gsMPU_Data,TRUE,TRUE);
         }
+        //需要校准时不做四元数解算
         IMU.q0 = 1.0f;
         IMU.q1 = 0;
         IMU.q2 = 0;
         IMU.q3 = 0;
     }
-    IMU_Data.ACCEL_X = IMU_Data.ACCEL_X - IMU_Data.os_accel_x;
-    IMU_Data.ACCEL_Y = IMU_Data.ACCEL_Y - IMU_Data.os_accel_y;
-    IMU_Data.ACCEL_Z = IMU_Data.ACCEL_Z - IMU_Data.os_accel_z;
-    IMU_Data.GYRO_X  = IMU_Data.GYRO_X - IMU_Data.os_gyro_x;
-    IMU_Data.GYRO_Y  = IMU_Data.GYRO_Y - IMU_Data.os_gyro_y;
-    IMU_Data.GYRO_Z  = IMU_Data.GYRO_Z - IMU_Data.os_gyro_z;
+    gsMPU_Data.s16ACCEL_X = gsMPU_Data.s16ACCEL_X - gsMPU_Data.s16os_accel_x;
+    gsMPU_Data.s16ACCEL_Y = gsMPU_Data.s16ACCEL_Y - gsMPU_Data.s16os_accel_x;
+    gsMPU_Data.s16ACCEL_Z = gsMPU_Data.s16ACCEL_Z - gsMPU_Data.s16os_accel_z;
+    gsMPU_Data.s16GYRO_X  = gsMPU_Data.s16GYRO_X - gsMPU_Data.s16os_gyro_x;
+    gsMPU_Data.s16GYRO_Y  = gsMPU_Data.s16GYRO_Y - gsMPU_Data.s16os_gyro_y;
+    gsMPU_Data.s16GYRO_Z  = gsMPU_Data.s16GYRO_Z - gsMPU_Data.s16os_gyro_z;
 
-    IMU_Data.ACCEL_X = MoveAvarageFilter(&Filter_Acc_X,IMU_Data.ACCEL_X);//滑动平均滤波
-    IMU_Data.ACCEL_Y = MoveAvarageFilter(&Filter_Acc_Y,IMU_Data.ACCEL_Y);//滑动平均滤波
-    IMU_Data.ACCEL_Z = MoveAvarageFilter(&Filter_Acc_Z,IMU_Data.ACCEL_Z);//滑动平均滤波
-    IMU_Data.GYRO_X = MoveAvarageFilter(&Filter_Gyro_X,IMU_Data.GYRO_X);//滑动平均滤波
-    IMU_Data.GYRO_Y = MoveAvarageFilter(&Filter_Gyro_Y,IMU_Data.GYRO_Y);//滑动平均滤波
-    IMU_Data.GYRO_Z = MoveAvarageFilter(&Filter_Gyro_Z,IMU_Data.GYRO_Z);//滑动平均滤波
+    gsMPU_Data.s16ACCEL_X = MoveAvarageFilter(&Filter_Acc_X,gsMPU_Data.s16ACCEL_X);//滑动平均滤波
+    gsMPU_Data.s16ACCEL_Y = MoveAvarageFilter(&Filter_Acc_Y,gsMPU_Data.s16ACCEL_Y);//滑动平均滤波
+    gsMPU_Data.s16ACCEL_Z = MoveAvarageFilter(&Filter_Acc_Z,gsMPU_Data.s16ACCEL_Z);//滑动平均滤波
+    gsMPU_Data.s16GYRO_X = MoveAvarageFilter(&Filter_Gyro_X,gsMPU_Data.s16GYRO_X);//滑动平均滤波
+    gsMPU_Data.s16GYRO_Y = MoveAvarageFilter(&Filter_Gyro_Y,gsMPU_Data.s16GYRO_Y);//滑动平均滤波
+    gsMPU_Data.s16GYRO_Z = MoveAvarageFilter(&Filter_Gyro_Z,gsMPU_Data.s16GYRO_Z);//滑动平均滤波
 
-    IMU_Data.gx = IMU_Data.GYRO_X*GyroCoefficient;
-    IMU_Data.gy = IMU_Data.GYRO_Y*GyroCoefficient;
-    IMU_Data.gz = IMU_Data.GYRO_Z*GyroCoefficient;
-    IMU_Update(IMU_Data,MAG_Data.yaw,1);
+    gsMPU_Data.fgx = gsMPU_Data.s16GYRO_X*GyroCoefficient;
+    gsMPU_Data.fgy = gsMPU_Data.s16GYRO_Y*GyroCoefficient;
+    gsMPU_Data.fgz = gsMPU_Data.s16GYRO_Z*GyroCoefficient;
+
+    IMU_Update(gsMPU_Data,MAG_Data.yaw,1);
+
+    return E_DevUpdate_Ok;
 }
 /*
 read mpu6050 data from registers
 */
-static void MPU_RD_ACCEL_GYRO(IMU_Data_TypeDef* mpu)
+static E_DevReadWrite_Ret_TypeDef _MPU_RD_ACCEL_GYRO(MPU_Data_TypeDef* pMPU)
 {
+    E_DevReadWrite_Ret_TypeDef eRet;
     u8 accel_temp_gyro[14];
-    MPU6050_RD_Buff(ACCEL_XOUT_H,14,accel_temp_gyro);
-    mpu->ACCEL_X = ((s16)(accel_temp_gyro[0])<<8 |accel_temp_gyro[1]) ;
-    mpu->ACCEL_Y = ((s16)(accel_temp_gyro[2])<<8 |accel_temp_gyro[3]) ;
-    mpu->ACCEL_Z = ((s16)(accel_temp_gyro[4])<<8 |accel_temp_gyro[5]) ;
-    mpu->TEMP =    ((s16)(accel_temp_gyro[6])<<8 |accel_temp_gyro[7]);
-    mpu->GYRO_X =  ((s16)(accel_temp_gyro[8])<<8 |accel_temp_gyro[9]);
-    mpu->GYRO_Y =  ((s16)(accel_temp_gyro[10])<<8 |accel_temp_gyro[11]);
-    mpu->GYRO_Z =  ((s16)(accel_temp_gyro[12])<<8 |accel_temp_gyro[13]);
+    eRet = _MPU_RD_Buff(ACCEL_XOUT_H,14,accel_temp_gyro);
+    if(eRet == E_DevReadWrite_Ret_Ok)
+    {
+        pMPU->s16ACCEL_X = ((s16)(accel_temp_gyro[0])<<8 |accel_temp_gyro[1]) ;
+        pMPU->s16ACCEL_Y = ((s16)(accel_temp_gyro[2])<<8 |accel_temp_gyro[3]) ;
+        pMPU->s16ACCEL_Z = ((s16)(accel_temp_gyro[4])<<8 |accel_temp_gyro[5]) ;
+        pMPU->s16TEMP =    ((s16)(accel_temp_gyro[6])<<8 |accel_temp_gyro[7]);
+        pMPU->s16GYRO_X =  ((s16)(accel_temp_gyro[8])<<8 |accel_temp_gyro[9]);
+        pMPU->s16GYRO_Y =  ((s16)(accel_temp_gyro[10])<<8 |accel_temp_gyro[11]);
+        pMPU->s16GYRO_Z =  ((s16)(accel_temp_gyro[12])<<8 |accel_temp_gyro[13]);
+        pMPU->bGet_ORG_DataOK = TRUE;
+        return E_DevReadWrite_Ret_Ok;
+    }
+    else
+    {
+        pMPU->bGet_ORG_DataOK = FALSE;
+        return E_DevReadWrite_Ret_Fail;
+    }
 }
 /*************************/
-static u8 MPU_GET_ACCEL_OFFSET(IMU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller)
+static E_DevCali_Status_TypeDef _MPU_GET_ACCEL_OFFSET(MPU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller)
 {
     u8 i;
     u16 buff[3];
     static s32 Accel[3]={0,0,0};
     static u16 count=0;
-    if(psIMU->eAccel_Offset_Status == E_OffsetReq )
+    if(psIMU->eAccelCali_Status == E_DevCali_Req )
     {
         if(count >= AccelOffsetNum)
         {
-            psIMU->eAccel_Offset_Status = E_OffsetFinish;
+            psIMU->eAccelCali_Status = E_DevCali_Finished;
             psIMU->s16os_accel_x = Accel[0]/count;
             psIMU->s16os_accel_y = Accel[1]/count;
             psIMU->s16os_accel_z = Accel[2]/count;
@@ -152,31 +186,32 @@ static u8 MPU_GET_ACCEL_OFFSET(IMU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho
             Accel[1] = 0;
             Accel[2] = 0;
             count=0;
-            return TRUE;
+            return E_DevCali_Finished;
         }
         else
         {
+            psIMU->eAccelCali_Status = E_DevCali_Doing;
             Accel[0] += psIMU->s16ACCEL_X;
             Accel[1] += psIMU->s16ACCEL_Y;
             Accel[2] += psIMU->s16ACCEL_Z-Range_Acc_Setting;
             count++;
-            return FALSE;
+            return E_DevCali_Doing;
         }
     }
     else 
-        return FALSE;
+        return E_DevCali_Null;
 }
-static u8 MPU_GET_GYRO_OFFSET(IMU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller)
+static E_DevCali_Status_TypeDef _MPU_GET_GYRO_OFFSET(MPU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller)
 {
     u8 i;
     u16 buff[3];
     static s32 Gyro[3]={0,0,0};
     static u16 count=0;
-    if(psIMU->eGyro_Offset_Status == E_OffsetReq)
+    if(psIMU->eGyroCali_Status == E_DevCali_Req)
     {
         if(count >= GyroOffsetNum)
         {
-            psIMU->eGyro_Offset_Status = E_OffsetFinish;
+            psIMU->eGyroCali_Status = E_DevCali_Finished;
             psIMU->s16os_gyro_x = Gyro[0]/count;
             psIMU->s16os_gyro_y = Gyro[1]/count;
             psIMU->s16os_gyro_z = Gyro[2]/count;
@@ -196,44 +231,59 @@ static u8 MPU_GET_GYRO_OFFSET(IMU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2
             Gyro[0] = 0;
             Gyro[1] = 0;
             Gyro[2] = 0;
-            return TRUE;
+            return E_DevCali_Finished;
         }
         else
         {
+            psIMU->eGyroCali_Status = E_DevCali_Doing;
             Gyro[0] += psIMU->s16GYRO_X;
             Gyro[1] += psIMU->s16GYRO_Y;
             Gyro[2] += psIMU->s16GYRO_Z;
             count++;
-            return FALSE;
+            return E_DevCali_Doing;
         }
     }
     else 
-        return FALSE;
+        return E_DevCali_Null;
 }
 
 
 
 /*************************/
-static int MPU6050_Write_Data(u8 addr,u8 data) //写数据
+static E_DevReadWrite_Ret_TypeDef _MPU_Write_Data(u8 addr,u8 data) //写数据
 {
-    int res;
+    E_IIC_Status_TypeDef eIIC_Status;
     u8* pBuff;
     *pBuff = data;
-    res = Api_IIC_WriteBytes(MPU_SlaveAddress,addr,1,pBuff);
-    return res;
+
+    eIIC_Status = Api_IIC_WriteBytes(MPU_SlaveAddress,addr,1,pBuff);
+
+    if(eIIC_Status == E_IIC_OK) 
+        return E_DevReadWrite_Ret_Ok;
+    else
+        return E_DevReadWrite_Ret_Fail;
 }
-static int MPU6050_Read_Data(u8 addr,u8* pData) //读取数据
+static E_DevReadWrite_Ret_TypeDef _MPU_Read_Data(u8 addr,u8* pData) //读取数据
 {
-    int res;
-    res = Api_IIC_ReadBytes(MPU_SlaveAddress,addr,1,pData);
-    return res;
+    E_IIC_Status_TypeDef eIIC_Status;
+
+    eIIC_Status = Api_IIC_ReadBytes(MPU_SlaveAddress,addr,1,pData);
+    if(eIIC_Status == E_IIC_OK) 
+        return E_DevReadWrite_Ret_Ok;
+    else
+        return E_DevReadWrite_Ret_Fail;
 }
 
-static int MPU6050_RD_Buff(u8 addr,u8 size,u8* pBuff)
+static E_DevReadWrite_Ret_TypeDef _MPU_RD_Buff(u8 addr,u8 size,u8* pBuff)
 {
-    int res;
-    res = Api_IIC_ReadBytes(MPU_SlaveAddress,addr,size,pBuff);
-    return res;
+    E_IIC_Status_TypeDef eIIC_Status;
+
+    eIIC_Status = Api_IIC_ReadBytes(MPU_SlaveAddress,addr,size,pBuff);
+
+    if(eIIC_Status == E_IIC_OK) 
+        return E_DevReadWrite_Ret_Ok;
+    else
+        return E_DevReadWrite_Ret_Fail;
 }
 
 
