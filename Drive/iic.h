@@ -40,9 +40,9 @@ u8 IICwriteBits(u8 dev,u8 reg,u8 bitStart,u8 length,u8 data);
 u8 IICwriteBit(u8 dev,u8 reg,u8 bitNum,u8 data);
 u8 IICreadBytes(u8 dev, u8 reg, u8 length, u8 *data);
 
-void Api_IIC_Write_CMD(u8 slave_addr,u8 cmd);
-int Api_IIC_Write_OneByte(u8 daddr,u8 addr,u8 data);
-int  Api_IIC_Read_OneByte(u8 daddr,u8 addr,u8* data);
+E_IIC_Status_TypeDef Api_IIC_Write_CMD(u8 slave_addr,u8 cmd);
+E_IIC_Status_TypeDef Api_IIC_Write_OneByte(u8 daddr,u8 addr,u8 data);
+E_IIC_Status_TypeDef  Api_IIC_Read_OneByte(u8 daddr,u8 addr,u8* data);
 
 E_IIC_Status_TypeDef Api_IIC_WriteBytes(u8 DeviceID,u8 RegAddr,u8 size,u8* pBuff);
 E_IIC_Status_TypeDef Api_IIC_ReadBytes(u8 DeviveID,u8 RegAddr,u8 size,u8* pBuff);
