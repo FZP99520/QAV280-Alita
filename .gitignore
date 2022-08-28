@@ -16,8 +16,6 @@
 *.dbgconf
 *.bat
 
-
-
 # Object files
 *.o
 *.ko
