@@ -21,9 +21,10 @@
 #endif
 
 #define Ka 0.08f
-MPU_Data_TypeDef gsMPU_Data =
+struct MPU_Data_TypeDef_s gsMPU_Data =
 {
     .eAccelCali_Status = E_DevCali_Null;
+    .eGyroCali_Status = E_DevCali_Null;
 };
 #define  GyroOffsetNum   200
 #define  AccelOffsetNum  200
