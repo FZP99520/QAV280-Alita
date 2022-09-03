@@ -15,9 +15,22 @@ static void _Drv_IIC_Delay(u8 i);
 static void _Drv_SDA_OUT(void);
 static void _Drv_SDA_IN(void);
 
+//HW define
+#define IIC_GPIO GPIOB
+#define IIC_SCL GPIO_Pin_10
+#define IIC_SDA GPIO_Pin_11
 
+//IO²Ù×÷º¯Êý	
+#define IIC_SCL_H     GPIO_SetBits(IIC_GPIO,IIC_SCL)//SCL
+#define IIC_SCL_L     GPIO_ResetBits(IIC_GPIO,IIC_SCL)//SCL
 
-void IIC_Init(void)
+#define IIC_SDA_H     GPIO_SetBits(IIC_GPIO,IIC_SDA)//SDA
+#define IIC_SDA_L     GPIO_ResetBits(IIC_GPIO,IIC_SDA)//SDA
+
+#define READ_SDA      GPIO_ReadInputDataBit(IIC_GPIO,IIC_SDA)  //ÊäÈëSDA 
+//end
+
+void Api_IIC_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);

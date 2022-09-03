@@ -12,7 +12,7 @@
 #define  GyroCoefficient   0.030f //1/32.8
 #define  Range_Acc_Setting 8192u
 
-typedef struct IMU_Data_TypeDef_s
+typedef struct MPU_Data_TypeDef_s
 {
     E_DevInit_Status_TypeDef eAccelInit_Status;
     E_DevInit_Status_TypeDef eGyroInit_Status;
