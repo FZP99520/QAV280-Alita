@@ -28,7 +28,7 @@ float real_speed_height;
 float m_height_Altitude_real=0;
 
 
-void Press_To_Height(MS5611_Typedef* height,u8 flag_filter)
+void Press_To_Height(MS5611_Data_TypeDef* height,u8 flag_filter)
 {
 	  float temp;
 	  if(flag_filter)
@@ -52,9 +52,9 @@ void Height_Control_Update(void)//T=20ms
 	exp_height+=(RC_ctrl.height-1500)*0.5*0.02f;
 	exp_height=LIMIT(exp_height,0,1.0f);
 	
-	IMU.Acc_Vertical=MoveAvarageFilter(&Filter_Acc_Vertical,IMU.Acc_Vertical);
-	MS5611.Altitude_Diff_P=MoveAvarageFilter(&Filter_bar_height,MS5611.Altitude_Diff_P);
-	Kalman_Height(MS5611.Altitude_Diff_P,IMU.Acc_Vertical*0.0011963f,&real_height,&kalman_speed);
+	gsIMU_Data.f32Acc_Vertical=MoveAvarageFilter(&Filter_Acc_Vertical,gsIMU_Data.f32Acc_Vertical);
+	gsMS5611_Data.Altitude_Diff_P=MoveAvarageFilter(&Filter_bar_height,gsMS5611_Data.Altitude_Diff_P);
+	Kalman_Height(gsMS5611_Data.Altitude_Diff_P,gsIMU_Data.f32Acc_Vertical*0.0011963f,&real_height,&kalman_speed);
   
 	real_speed_height=(real_height-last_real_height)*50.0f;//50=1/0.020
 	real_speed_height=0.8f*real_speed_height+0.2f*kalman_speed;

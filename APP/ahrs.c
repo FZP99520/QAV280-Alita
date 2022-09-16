@@ -91,9 +91,9 @@ void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, flo
     q2 *= recipNorm;  
     q3 *= recipNorm;  
     
-    IMU.Roll = asin(-2 * q1*q3 + 2 * q0*q2) * 180 / PI; 													
-    IMU.Pitch = atan2(2 * q2*q3 + 2 * q0*q1, -2 *q1q1 - 2 *q2q2 + 1) * 180 / PI; 
-    IMU.Yaw+=gz_deg*sampleT;
+    gsIMU_Data.f32Roll = asin(-2 * q1*q3 + 2 * q0*q2) * 180 / PI; 													
+    gsIMU_Data.f32Pitch = atan2(2 * q2*q3 + 2 * q0*q1, -2 *q1q1 - 2 *q2q2 + 1) * 180 / PI; 
+    gsIMU_Data.f32Yaw+=gz_deg*sampleT;
 } 
       
 void MahonyAHRSupdateIMU(float gx,float gy,float gz,float ax,float ay,float az)
@@ -190,10 +190,10 @@ void MahonyAHRSupdateIMU(float gx,float gy,float gz,float ax,float ay,float az)
     q2 *= recipNorm;  
     q3 *= recipNorm;  
     
-    IMU.Yaw = atan2(2 * q1q2 + 2 *q0q3, 1-2*q2q2-2*q3q3) * 180.0f / PI;	// Yaw
+    gsIMU_Data.f32Yaw = atan2(2 * q1q2 + 2 *q0q3, 1-2*q2q2-2*q3q3) * 180.0f / PI;	// Yaw
 		//Yaw += my_gz*sampleT;
-	  IMU.Roll = asin(-2 * q1q3 + 2 * q0q2) * 180.0f / PI; 													
-    IMU.Pitch = atan2(2 * q2q3 + 2 * q0q1, -2 *q1q1 - 2 *q2q2 + 1) * 180 / PI; 	
+	  gsIMU_Data.f32Roll = asin(-2 * q1q3 + 2 * q0q2) * 180.0f / PI; 													
+    gsIMU_Data.f32Pitch = atan2(2 * q2q3 + 2 * q0q1, -2 *q1q1 - 2 *q2q2 + 1) * 180 / PI; 	
     
     /*Yaw_temp+=Yaw_Gyro*sampleT;
     if((Mag_Yaw>90 && Yaw_temp<-90)|| (Mag_Yaw<-90 && Yaw_temp>90))
@@ -215,7 +215,7 @@ void MahonyAHRSupdate(float gx, float gy, float gz, float ax, float ay, float az
     float halfvx, halfvy, halfvz, halfwx, halfwy, halfwz;  
     float halfeax=0, halfeay=0, halfeaz=0;  
 	  float halfemx=0,halfemy=0,halfemz=0;
-   // float exInt=0,eyInt=0,ezInt=0;
+    float exInt=0,eyInt=0,ezInt=0;
     float qa, qb, qc;  
   
     // Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)  
@@ -279,30 +279,30 @@ void MahonyAHRSupdate(float gx, float gy, float gz, float ax, float ay, float az
 				halfemz=(mx * halfwy - my * halfwx);
      if(Fly_sta==FlyStaLock) //锁机状态下使用大系数
       {  
-            IMU.Kp_Acc=kp_acc_fast;
-					  IMU.Ki_Acc=ki_acc_fast;
-				    IMU.Kp_Yaw_Mag=kp_yaw_fast;
-				    IMU.Ki_Yaw_Mag=ki_yaw_fast;
+            gsIMU_Data.f32Kp_Acc=kp_acc_fast;
+					  gsIMU_Data.f32Ki_Acc=ki_acc_fast;
+				    gsIMU_Data.f32Kp_Yaw_Mag=kp_yaw_fast;
+				    gsIMU_Data.f32Ki_Yaw_Mag=ki_yaw_fast;
       }  
 			else if(Fly_sta==FlyStaUnlock)
 			{
-				  IMU.Kp_Acc=kp_acc_slow;
-					IMU.Ki_Acc=ki_acc_slow;
+				  gsIMU_Data.f32Kp_Acc=kp_acc_slow;
+					gsIMU_Data.f32Ki_Acc=ki_acc_slow;
 			}
 			else;
         // Compute and apply integral feedback if enabled  
-        if(IMU.Kp_Acc > 0.0f) {  
-            IMU.exInt_Acc += IMU.Ki_Acc * halfeax * sampleT;    // integral error scaled by Ki  
-            IMU.eyInt_Acc += IMU.Ki_Acc * halfeay * sampleT;  
-            IMU.ezInt_Acc += IMU.Ki_Acc * halfeaz * sampleT;  
-            gx += IMU.exInt_Acc;  // apply integral feedback  
-            gy += IMU.eyInt_Acc;  
-            gz += IMU.ezInt_Acc;  
+        if(gsIMU_Data.f32Kp_Acc > 0.0f) {  
+            gsIMU_Data.f32exInt_Acc += gsIMU_Data.f32Ki_Acc * halfeax * sampleT;    // integral error scaled by Ki  
+            gsIMU_Data.f32eyInt_Acc += gsIMU_Data.f32Ki_Acc * halfeay * sampleT;  
+            gsIMU_Data.f32ezInt_Acc += gsIMU_Data.f32Ki_Acc * halfeaz * sampleT;  
+            gx += gsIMU_Data.f32exInt_Acc;  // apply integral feedback  
+            gy += gsIMU_Data.f32eyInt_Acc;  
+            gz += gsIMU_Data.f32ezInt_Acc;  
         }  
         else {  
-            IMU.exInt_Acc = 0.0f; // prevent integral windup  
-            IMU.eyInt_Acc = 0.0f;  
-            IMU.ezInt_Acc = 0.0f;  
+            gsIMU_Data.f32exInt_Acc = 0.0f; // prevent integral windup  
+            gsIMU_Data.f32eyInt_Acc = 0.0f;  
+            gsIMU_Data.f32ezInt_Acc = 0.0f;  
         }  
 //       if(IMU.Kp_yaw> 0.0f) {  
 //            IMU.emxInt += IMU.Ki_yaw * halfemx * sampleT;    // integral error scaled by Ki  
@@ -341,13 +341,13 @@ void MahonyAHRSupdate(float gx, float gy, float gz, float ax, float ay, float az
     q1 *= recipNorm;  
     q2 *= recipNorm;  
     q3 *= recipNorm;  
-    IMU.q0=q0;
-		IMU.q1=q1;
-		IMU.q2=q2;
-		IMU.q3=q3;
-    IMU.Yaw = atan2(2.0f * q1q2 + 2.0f *q0q3, 1.0f-2.0f*q2q2-2*q3q3) * 180.0f/ pi + 180.0f ;	// Yaw
-	  IMU.Roll = asin(-2.0f * q1q3 + 2.0f * q0q2) * 180.0f / pi; 	
-    IMU.Pitch = atan2(2.0f * q2q3 + 2.0f * q0q1, -2.0f *q1q1 - 2.0f *q2q2 + 1.0f) * 180.0f / pi; 	
+    gsIMU_Data.f32q0=q0;
+		gsIMU_Data.f32q1=q1;
+		gsIMU_Data.f32q2=q2;
+		gsIMU_Data.f32q3=q3;
+    gsIMU_Data.f32Yaw = atan2(2.0f * q1q2 + 2.0f *q0q3, 1.0f-2.0f*q2q2-2*q3q3) * 180.0f/ pi + 180.0f ;	// Yaw
+	  gsIMU_Data.f32Roll = asin(-2.0f * q1q3 + 2.0f * q0q2) * 180.0f / pi; 	
+    gsIMU_Data.f32Pitch = atan2(2.0f * q2q3 + 2.0f * q0q1, -2.0f *q1q1 - 2.0f *q2q2 + 1.0f) * 180.0f / pi; 	
 		
 }  
 

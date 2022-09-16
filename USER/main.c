@@ -4,6 +4,7 @@
 #include "log.h"
 u16 BuffWrite[10]={1,2,3,4,5,6,7,8,9,10};
 u16 BuffRead[10];
+
 int main()
 {
     char str_buff[64];

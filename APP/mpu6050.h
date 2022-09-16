@@ -35,12 +35,12 @@ typedef struct MPU_Data_TypeDef_s
     s16 s16os_gyro_x;
     s16 s16os_gyro_y;
     s16 s16os_gyro_z;
-    float fax;
-    float fay;
-    float faz;
-    float fgx;
-    float fgy;
-    float fgz;
+    float f32Accel_x;
+    float f32Accel_y;
+    float f32Accel_z;
+    float f32Gyro_x;
+    float f32Gyro_y;
+    float f32Gyro_z;
 }MPU_Data_TypeDef;
 
 extern MPU_Data_TypeDef gsMPU_Data;

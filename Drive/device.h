@@ -27,6 +27,7 @@ typedef enum
 
 typedef enum
 {
+    E_DevUpdate_Null,
     E_DevUpdate_Fail,
     E_DevUpdate_Doing,
     E_DevUpdate_Ok

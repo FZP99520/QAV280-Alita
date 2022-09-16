@@ -49,8 +49,8 @@ void GPS_Position_PID_Para_Init(void)
 //Î»ÖÃ¿ØÖÆº¯Êý
 void Position_Control_Update(void)
 {
-	Cos_Yaw=cosf(IMU.Yaw*deg_To_Radian);
-	Sin_Yaw=sinf(IMU.Yaw*deg_To_Radian);
+	Cos_Yaw=cosf(gsIMU_Data.f32Yaw*deg_To_Radian);
+	Sin_Yaw=sinf(gsIMU_Data.f32Yaw*deg_To_Radian);
 	if(Fly_sta!=FlyStaFlying)
 	{
 		Target_Lon=gps_data.longitude*10000000.0f;

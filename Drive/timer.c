@@ -45,22 +45,23 @@ void TIMER4_Init(void)
 }
 void TIM2_IRQHandler(void) //T=2.5ms
 {
-	static u16 cnt0=0;
-	if(TIM_GetITStatus(TIM2,TIM_IT_Update)!=RESET)
-	{
-		cnt0++;
-		IMU_Data_Update();//更新加速度计和陀螺仪数据
-		PID_Cal_Update(); //更新PID数据
+    static u16 cnt0=0;
+    u8 bRet;
+    if(TIM_GetITStatus(TIM2,TIM_IT_Update)!=RESET)
+    {
+        cnt0++;
+        MPU_Data_Update();//更新加速度计和陀螺仪数据
+        PID_Cal_Update(); //更新PID数据
 
-		if(cnt0%4==0)  MAG_Data_Update();//T=4*2.5ms=10ms 磁力计数据输出速率100Hz
-		if(cnt0%8==0)  MAG_Error_Det();//T=8*2.5ms=20ms 检查磁力计数据是否正常
-		if(cnt0%4==1)  MS5611_Data_Update();//T=4*2.5ms=10ms更新气压计数据   错开采样时刻
-		if(cnt0%2==0)  Control(); //T=2*2.5ms=5ms
-		//if(cnt0%10==0) GPS_Control_Update();//T=10*2.5ms=25ms
-		if(cnt0%8==1)  //T=8*2.5ms=20ms
-        {if(IMU_Data.AccelOffsetFinished==1 && MS5611.OffsetFinished==1)Height_Control_Update();}
-		TIM_ClearITPendingBit(TIM2,TIM_IT_Update);
-	}
+        if(cnt0%4==0)  MAG_Data_Update(gsIMU_Data,&bRet);//T=4*2.5ms=10ms 磁力计数据输出速率100Hz
+        if(cnt0%8==0)  MAG_Error_Det(&gsMAG_Data);//T=8*2.5ms=20ms 检查磁力计数据是否正常
+        if(cnt0%4==1)  MS5611_Data_Update();//T=4*2.5ms=10ms更新气压计数据   错开采样时刻
+        if(cnt0%2==0)  Control(); //T=2*2.5ms=5ms
+        //if(cnt0%10==0) GPS_Control_Update();//T=10*2.5ms=25ms
+        if(cnt0%8==1)  //T=8*2.5ms=20ms
+        //{if(IMU_Data.AccelOffsetFinished==1 && MS5611.OffsetFinished==1)Height_Control_Update();}
+        TIM_ClearITPendingBit(TIM2,TIM_IT_Update);
+    }
 }
 void TIM4_IRQHandler(void) //T=10ms
 {

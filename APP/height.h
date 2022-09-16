@@ -22,7 +22,7 @@ extern float real_height;
 extern float real_speed_height;
 
 
-void Press_To_Height(MS5611_Typedef* height,u8 flag_filter);
+void Press_To_Height(MS5611_Data_TypeDef* height,u8 flag_filter);
 void Real_Height_Speed_Update(void);
 void Height_Control_Update(void);
 #endif

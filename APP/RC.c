@@ -1,6 +1,6 @@
 #include "IncludeAll.h"
 
-#define BYTE0(dwTemp)       ( *( (char *)(&dwTemp)		) )
+#define BYTE0(dwTemp)       ( *( (char *)(&dwTemp)    ) )
 #define BYTE1(dwTemp)       ( *( (char *)(&dwTemp) + 1) )
 #define BYTE2(dwTemp)       ( *( (char *)(&dwTemp) + 2) )
 #define BYTE3(dwTemp)       ( *( (char *)(&dwTemp) + 3) )
@@ -37,43 +37,43 @@ void RC_Payload(u8 receive_result)
 		{
 			 if(RC_flag.send_accel_cal_result)
 		  {
-			    if(IMU_Data.AccelOffsetFinished) 
-			   {
-				   RC_flag.send_accel_cal_result=0;
-				   RC_Send_MSG(MSG_ACCEL,MSG_SUCCEED);//给遥控返回校准成功结果
-			   }
-			   else 
-					 RC_Send_STATUS(IMU.Roll,IMU.Pitch,IMU.Yaw,real_height,real_speed_height,FlyMode,Fly_sta);
+//			   //if(gsIMU_Data. )
+//			   {
+//				   RC_flag.send_accel_cal_result=0;
+//				   RC_Send_MSG(MSG_ACCEL,MSG_SUCCEED);//给遥控返回校准成功结果
+//			   }
+//			   //else 
+//					 //RC_Send_STATUS(IMU.Roll,IMU.Pitch,IMU.Yaw,real_height,real_speed_height,FlyMode,Fly_sta);
 		  }
 		 else if(RC_flag.send_gyro_cal_result)
 		  {
-			    if(IMU_Data.GyroOffsetFinished) 
-			   {
-				   RC_flag.send_gyro_cal_result=0;
-				   RC_Send_MSG(MSG_GYRO,MSG_SUCCEED);
-			   }
-			   else 
-					 RC_Send_MSG(MSG_GYRO,MSG_FAIL);
+//			    if(IMU_Data.GyroOffsetFinished) 
+//			   {
+//				   RC_flag.send_gyro_cal_result=0;
+//				   RC_Send_MSG(MSG_GYRO,MSG_SUCCEED);
+//			   }
+//			   else 
+//					 RC_Send_MSG(MSG_GYRO,MSG_FAIL);
 		  }
 		 else if(RC_flag.send_mag_cal_result)
 		  {
-			   if(MAG_Data.MagOffsetFinished)
-			   {
-					  RC_flag.send_mag_cal_result=0;
-		        RC_Send_MSG(MSG_MAG,MSG_SUCCEED);
-				 }
-				 else
-					 RC_Send_MSG(MSG_MAG,MSG_FAIL);
+//			   if(MAG_Data.MagOffsetFinished)
+//			   {
+//					  RC_flag.send_mag_cal_result=0;
+//		        RC_Send_MSG(MSG_MAG,MSG_SUCCEED);
+//				 }
+//				 else
+//					 RC_Send_MSG(MSG_MAG,MSG_FAIL);
 		  }
 		 else if(RC_flag.send_baro_cal_result)
 		  {
-			   if(MS5611.OffsetFinished)
-			   {
-					 RC_flag.send_baro_cal_result=0;
-			     RC_Send_MSG(MSG_BAR,MSG_SUCCEED);
-			   }
-				 else
-		 			 RC_Send_MSG(MSG_BAR,MSG_FAIL);
+//			   if(MS5611.OffsetFinished)
+//			   {
+//					 RC_flag.send_baro_cal_result=0;
+//			     RC_Send_MSG(MSG_BAR,MSG_SUCCEED);
+//			   }
+//				 else
+//		 			 RC_Send_MSG(MSG_BAR,MSG_FAIL);
 		  }
 		 else;
 		 return;
@@ -122,14 +122,14 @@ void RC_Payload(u8 receive_result)
 		 if(RC_flag.send_status) 
 		 {
 			  RC_flag.send_status=0;
-				RC_Send_STATUS(IMU.Roll,IMU.Pitch,IMU.Yaw,real_height,real_speed_height,FlyMode,Fly_sta);
+//				RC_Send_STATUS(IMU.Roll,IMU.Pitch,IMU.Yaw,real_height,real_speed_height,FlyMode,Fly_sta);
 		 }
 		 else if(RC_flag.send_sensor)
 		 {
-			    RC_flag.send_sensor=0;
-					RC_Send_Sensor(IMU_Data.ACCEL_X,IMU_Data.ACCEL_Y,IMU_Data.ACCEL_Z,\
-		                       IMU_Data.GYRO_X,IMU_Data.GYRO_Y,IMU_Data.GYRO_Z,\
-		                       MAG_Data.x,MAG_Data.y,MAG_Data.z);
+//			    RC_flag.send_sensor=0;
+//					RC_Send_Sensor(IMU_Data.ACCEL_X,IMU_Data.ACCEL_Y,IMU_Data.ACCEL_Z,\
+//		                       IMU_Data.GYRO_X,IMU_Data.GYRO_Y,IMU_Data.GYRO_Z,\
+//		                       MAG_Data.x,MAG_Data.y,MAG_Data.z);
 		 }
 		 else if(RC_flag.send_gps)
      {
@@ -442,23 +442,23 @@ u8 RC_Anl_CMD1(u8* buff)
     {
 		   if(*(buff+4)==0X01)
 		  { 
-		    IMU_Data.AccelOffsetReq = 1;
-		    IMU_Data.AccelOffsetFinished=0;
+//		    IMU_Data.AccelOffsetReq = 1;
+//		    IMU_Data.AccelOffsetFinished=0;
       }
 		   else if(*(buff+4)==0X02)
 		  {
-		    IMU_Data.GyroOffsetReq = 1;
-		    IMU_Data.GyroOffsetFinished = 0;
+//		    IMU_Data.GyroOffsetReq = 1;
+//		    IMU_Data.GyroOffsetFinished = 0;
 		  }
 		  else if(*(buff+4)==0X03)
 		  {
-			  MAG_Data.MagOffsetReq = 1;
-        MAG_Data.MagOffsetFinished = 0;			
+//			  MAG_Data.MagOffsetReq = 1;
+//        MAG_Data.MagOffsetFinished = 0;			
 		  }
 		  else if(*(buff+4)==0X04)
 		  {
-			  MS5611.OffsetReq = 1;
-        MS5611.OffsetFinished = 0;			
+//			  MS5611.OffsetReq = 1;
+//        MS5611.OffsetFinished = 0;			
 		  }
 	  }
 		if(*(buff+4)==0XA0)
