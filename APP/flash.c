@@ -65,54 +65,50 @@ void FLASH_ReadMoreData(uint32_t startAddress,uint16_t *buff,uint16_t cnt)
 }
 //Read sensor offset Data from flash
 /**********************/
-void Flash_Read_Sensor_Data(IMU_Data_TypeDef* imu_data,MAG_Data_TypeDef* mag,MS5611_Typedef* ms)
+void Flash_Read_Sensor_Data(MPU_Data_TypeDef* mpu_data,MAG_Data_TypeDef* mag,MS5611_Data_TypeDef* ms)
 {
 	u16 BuffRead[6];
   FlashRead(MPUAccelOffsetAddr,BuffRead,3);
 	if(BuffRead[0]!=0xFFFF && BuffRead[1]!= 0xFFFF &&BuffRead[2]!= 0xFFFF)
 	{
-		imu_data->os_accel_x = (s16)BuffRead[0];
-		imu_data->os_accel_y = (s16)BuffRead[1];
-		imu_data->os_accel_z = (s16)BuffRead[2];
-		imu_data->AccelOffsetFinished =1;
-		imu_data->AccelOffsetReq=0;
+		mpu_data->s16os_accel_x = (s16)BuffRead[0];
+		mpu_data->s16os_accel_y = (s16)BuffRead[1];
+		mpu_data->s16os_accel_z = (s16)BuffRead[2];
+		mpu_data->eAccelCali_Status = E_DevCali_Finished;
 		//add test
 	}
 	else
 	{
-		imu_data->AccelOffsetFinished =0;
-		imu_data->AccelOffsetReq=1;
+		mpu_data->eAccelCali_Status = E_DevCali_Req;
 	}
 	FlashRead(MPUGyroOffsetAddr,BuffRead,3);
 	if(BuffRead[0]!=0xFFFF && BuffRead[1]!= 0xFFFF && BuffRead[2]!= 0xFFFF)
 	{
-		imu_data->os_gyro_x = (s16)BuffRead[0];
-		imu_data->os_gyro_y = (s16)BuffRead[1];
-		imu_data->os_gyro_z = (s16)BuffRead[2];
-		imu_data->GyroOffsetFinished =1;
-		imu_data->GyroOffsetReq=0;
+		mpu_data->s16os_gyro_x = (s16)BuffRead[0];
+		mpu_data->s16os_gyro_y = (s16)BuffRead[1];
+		mpu_data->s16os_gyro_z = (s16)BuffRead[2];
+		mpu_data->eGyroCali_Status = E_DevCali_Finished;
 	}
 	else
 	{
-		imu_data->GyroOffsetFinished =0;
-		imu_data->GyroOffsetReq=1;
+		mpu_data->eGyroCali_Status = E_DevCali_Req;
 	}
 	FlashRead(MAGOffsetAddr,BuffRead,6);
 	if(BuffRead[0]!=0xFFFF && BuffRead[1]!= 0xFFFF &&BuffRead[2]!= 0xFFFF)
 	{
-		mag->xoffset = BuffRead[0];
-		mag->yoffset = BuffRead[1];
-	  mag->zoffset = BuffRead[2];
-		mag->xgain   = (float)BuffRead[3]/1000.0f;
-		mag->ygain   = (float)BuffRead[4]/1000.0f;
-		mag->zgain   = (float)BuffRead[5]/1000.0f;
-		mag->MagOffsetFinished = 1;
-		mag->MagOffsetReq=0;
+//		mag->xoffset = BuffRead[0];
+//		mag->yoffset = BuffRead[1];
+//	  mag->zoffset = BuffRead[2];
+//		mag->xgain   = (float)BuffRead[3]/1000.0f;
+//		mag->ygain   = (float)BuffRead[4]/1000.0f;
+//		mag->zgain   = (float)BuffRead[5]/1000.0f;
+//		mag->MagOffsetFinished = 1;
+//		mag->MagOffsetReq=0;
 	}
 	else
 	{
-		mag->MagOffsetFinished = 0;
-		mag->MagOffsetReq=1;
+//		mag->MagOffsetFinished = 0;
+//		mag->MagOffsetReq=1;
 	}
 }
 //read pid data from flash

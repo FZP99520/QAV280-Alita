@@ -28,4 +28,10 @@
 #include "filter.h"
 #include "Position_Control_GPS.h"
 #include "log.h"
+#include "device.h"
+
+
+#define TRUE 1
+#define FALE 0
+
 #endif

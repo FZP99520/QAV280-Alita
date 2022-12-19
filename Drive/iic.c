@@ -216,7 +216,7 @@ E_IIC_Status_TypeDef Api_IIC_ReadBytes(u8 DeviveID,u8 RegAddr,u8 size,u8* pBuff)
     eRet = _Drv_IIC_Wait_Ack();
     if(eRet != E_IIC_OK) return E_IIC_FAIL;
     _Drv_IIC_Send_Byte(RegAddr);
-    bRet = _Drv_IIC_Wait_Ack();
+    eRet = _Drv_IIC_Wait_Ack();
     if(eRet != E_IIC_OK) return E_IIC_FAIL;
     _Drv_IIC_Start();
     _Drv_IIC_Send_Byte(RegAddr+1);

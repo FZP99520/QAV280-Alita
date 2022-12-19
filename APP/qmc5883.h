@@ -5,72 +5,44 @@
 //#define MAG_HMC5883
 #include "stm32f10x.h"
 #include "iic.h"
-typedef struct
+#include "device.h"
+#include "IMU.h"
+
+typedef struct MAG_Data_TypeDef_s
 {
-	u8 MagOffsetReq;
-	u8 MagOffsetFinished;
-	u8 sta;
-	u8 Err;
-	s16 x;
-	s16 y;
-	s16 z;
-	float mx;
-	float my;
-	float mz;
-	float Strength;
-	s16 xmin;
-	s16 xmax;
-	s16 ymin;
-	s16 ymax;
-	s16 zmin;
-	s16 zmax;
-	float xgain;
-	float ygain;
-	float zgain;
-	s16 xoffset;
-	s16 yoffset;
-	s16 zoffset;
-	float yaw;
+    E_DevInit_Status_TypeDef eMagInit_Status;
+    E_DevCali_Status_TypeDef eMagCali_Status;
+    u8 bYawCalWithIMU;
+    u8 u8MAG_Status;
+    u8 bMAG_Err_Flag;
+    u16 u16MAG_Err_Cnt;
+    s16 s16MAG_X;
+    s16 s16MAG_Y;
+    s16 s16MAG_Z;
+    float f32Mag_x;
+    float f32Mag_y;
+    float f32Mag_z;
+    float f32Strength;
+    s16 s16MAG_X_Min;
+    s16 s16MAG_X_Max;
+    s16 s16MAG_Y_Min;
+    s16 s16MAG_Y_Max;
+    s16 s16MAG_Z_Min;
+    s16 s16MAG_Z_Max;
+    float f32Mag_X_Gain;
+    float f32Mag_Y_Gain;
+    float f32Mag_Z_Gain;
+    s16 s16os_x;
+    s16 s16os_y;
+    s16 s16os_z;
+    float f32MAG_Yaw;
 }MAG_Data_TypeDef;
-extern MAG_Data_TypeDef MAG_Data;
+extern MAG_Data_TypeDef gsMAG_Data;
 
+E_DevInit_Status_TypeDef MAG_Init(void);
+E_DevUpdate_Ret_TypeDef MAG_Data_Update(IMU_Data_TypeDef sIMU_Data,u8* bYawCalWithIMU);
 
-u8 MAG_Init(void);
-void MAG_Data_Update(void);
-void MAG_Error_Det(void);
+void MAG_Error_Det(MAG_Data_TypeDef* pMAG_Data);
 
-#ifdef MAG_HMC5883
-#define	 Address  0x3c
-#define  Reg_Config_A 0x00  //ÅäÖÃ¼Ä´æÆ÷A
-#define  Reg_Config_B 0x01  //ÅäÖÃ¼Ä´æÆ÷B
-#define  Reg_Mode     0x02  //Ä£Ê½¼Ä´æÆ÷
-#define  Reg_XData_H 0x03
-#define  Reg_XData_L 0x04
-#define  Reg_YData_H 0x05
-#define  Reg_YData_L 0x06
-#define  Reg_ZData_H 0x07
-#define  Reg_ZData_L 0x08
-#define  Reg_Status  0x09 //×´Ì¬¼Ä´æÆ÷
-#endif
-/**********************************/
-#ifdef   MAG_QMC5883
-#define	 MAG_DeviceID  0x1a
-#define  Reg_XData_L 0x00
-#define  Reg_XData_H 0x01
-#define  Reg_YData_L 0x02
-#define  Reg_YData_H 0x03
-#define  Reg_ZData_L 0x04
-#define  Reg_ZData_H 0x05
-#define  Reg_Status  0x06  //×´Ì¬¼Ä´æÆ÷ ¶Á
-#define  Reg_Temp_L  0x07  //temperature 100LSB/c
-#define  Reg_Temp_H  0x08
-#define  Reg_Config1  0x09 //ÅäÖÃ¼Ä´æÆ÷
-#define  Reg_Config2 0x0a //interrupt reg
-#define  Reg_Period  0x0b //recommanded 0x01
-#define  Chip_id     0x0d
-#define MAG_DRY 0x01 
-#define MAG_OVL 0x02 //³¬¹ýÁ¿³Ì
-#define MAG_DOR 0x04 //Ìø¹ýÊý¾ÝÃ»ÓÐ¶ÁÈ¡
-#endif
 /*******************************/
 #endif

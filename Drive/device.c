@@ -27,7 +27,7 @@ void Init_Device(void)
     USART1_Init(USART_BaudRate_115200);
     USART2_Init(USART_BaudRate_115200);
     Delay_ms(100);
-    IIC_Init();
+    Api_IIC_Init();
     DebugLog("Driver:IIC init finished~\n");
     SPI2_Init();
     DebugLog("Driver:SPI2 init finished~\n");
@@ -39,7 +39,7 @@ void Init_Device(void)
     DebugLog("Driver:PWM init finished~\n");
 
     //device init
-    Flash_Read_Sensor_Data(&IMU_Data,&MAG_Data,&MS5611); //read offset data from flash first
+    Flash_Read_Sensor_Data(&gsMPU_Data,&gsMAG_Data,&gsMS5611_Data); //read offset data from flash first
     //mpu6050 init
     ret = MPU6050_Init();
     if(ret == TRUE) 
@@ -70,9 +70,9 @@ void Init_Device(void)
     else
         DebugLog("Driver:NRF24L01 init fail\n");
     
-    if(IMU_Data.AccelOffsetFinished==0)     IMU_Data.AccelOffsetReq=1;
-    if(IMU_Data.GyroOffsetFinished==0)      IMU_Data.GyroOffsetReq=1;
-    if(MS5611.OffsetFinished == 0)          MS5611.OffsetReq=1;
+//    if(IMU_Data.AccelOffsetFinished==0)     IMU_Data.AccelOffsetReq=1;
+//    if(IMU_Data.GyroOffsetFinished==0)      IMU_Data.GyroOffsetReq=1;
+//    if(MS5611.OffsetFinished == 0)          MS5611.OffsetReq=1;
     //send data to controller first
     RC_flag.send_accel_cal_result=1;
     RC_flag.send_gyro_cal_result=1;

@@ -1,6 +1,6 @@
 #include "ANO_DT.h"
 #include "usart.h"
-#include "mpu6050.h"
+//#include "mpu6050.h"
 #include "ms5611.h"
 #include "control.h"
 #include "nrf24l01.h"
@@ -84,15 +84,15 @@ void ANO_DT_Data_Exchange(void)
 	else if(f.send_status)
 	{
 		f.send_status = 0;
-		ANO_DT_Send_Status(IMU.Roll,IMU.Pitch,IMU.Yaw,real_height,FlyMode,Fly_sta);
+		ANO_DT_Send_Status(gsIMU_Data.f32Roll,gsIMU_Data.f32Pitch,gsIMU_Data.f32Yaw,real_height,FlyMode,Fly_sta);
 	}	
 /////////////////////////////////////////////////////////////////////////////////////
 	else if(f.send_senser)
 	{
 		f.send_senser = 0;
-		ANO_DT_Send_Senser(IMU_Data.ACCEL_X,IMU_Data.ACCEL_Y,IMU_Data.ACCEL_Z,
-												IMU_Data.GYRO_X,IMU_Data.GYRO_Y,IMU_Data.GYRO_Z,
-												MAG_Data.x,MAG_Data.y,MAG_Data.z,MS5611.RP);
+		ANO_DT_Send_Senser(gsMPU_Data.s16ACCEL_X,gsMPU_Data.s16ACCEL_Y,gsMPU_Data.s16ACCEL_Z,
+												gsMPU_Data.s16GYRO_X,gsMPU_Data.s16GYRO_Y,gsMPU_Data.s16GYRO_Z,
+												gsMAG_Data.s16MAG_X,gsMAG_Data.s16MAG_Y,gsMAG_Data.s16MAG_Z,gsMS5611_Data.RP);
 	}	
 /////////////////////////////////////////////////////////////////////////////////////
 	else if(f.send_rcdata)
@@ -235,23 +235,23 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 	{
 		if(*(data_buf+4)==0X01)
 		{ 
-		  IMU_Data.AccelOffsetReq = 1;
-		  IMU_Data.AccelOffsetFinished=0;
+//		  IMU_Data.AccelOffsetReq = 1;
+//		  IMU_Data.AccelOffsetFinished=0;
     }
 		if(*(data_buf+4)==0X02)
 		{
-		  IMU_Data.GyroOffsetReq = 1;
-		  IMU_Data.GyroOffsetFinished = 0;
+//		  IMU_Data.GyroOffsetReq = 1;
+//		  IMU_Data.GyroOffsetFinished = 0;
 		}
 		if(*(data_buf+4)==0X04)
 		{
-			MAG_Data.MagOffsetReq = 1;
-      MAG_Data.MagOffsetFinished = 0;			
+//			MAG_Data.MagOffsetReq = 1;
+//      MAG_Data.MagOffsetFinished = 0;			
 		}
 		if(*(data_buf+4)==0X05)
 		{
-			MS5611.OffsetReq = 1;
-      MS5611.OffsetFinished = 0;			
+//			MS5611.OffsetReq = 1;
+//      MS5611.OffsetFinished = 0;			
 		}
 		if(*(data_buf+4)==0XA0)
 		{

@@ -31,30 +31,30 @@ void Control(void)
 	static u16 AngleLockCnt=0;
 	if(Fly_sta == FlyStaLock || Fly_sta==FlyStaRdy)
 	{
-     if(IMU_Data.AccelOffsetFinished == 1&&IMU_Data.GyroOffsetFinished ==1 \
-			   && MAG_Data.MagOffsetFinished ==1  && MS5611.OffsetFinished ==1 && \
-		     PID_STA == PIDInitFinished && gps_data.gpssta==1)
-			   {if(Fly_sta==FlyStaLock) Fly_sta=FlyStaRdy;}
-	   else
-         Fly_sta = FlyStaLock;
-		 PWM_Set(&MOTOR,FlyStaLock);
+//     if(IMU_Data.AccelOffsetFinished == 1&&IMU_Data.GyroOffsetFinished ==1 \
+//			   && MAG_Data.MagOffsetFinished ==1  && MS5611.OffsetFinished ==1 && \
+//		     PID_STA == PIDInitFinished && gps_data.gpssta==1)
+//			   {if(Fly_sta==FlyStaLock) Fly_sta=FlyStaRdy;}
+//	   else
+//         Fly_sta = FlyStaLock;
+//		 PWM_Set(&MOTOR,FlyStaLock);
 		 return;
 	}
 	else if(Fly_sta == FlyStaUnlock) //锁定状态，检查起飞角度
 	{	
 		PWM_Set(&MOTOR,FlyStaUnlock);
 		PID_Reset_All();
-		if( fabs(IMU.Pitch) <= Safe_Angle &&fabs (IMU.Roll)<=Safe_Angle )
-		{
-			AngleLockCnt++;
-			if(AngleLockCnt > 800u)
-			{
-				AngleLockCnt = 0;
-				Fly_sta = FlyStaFlying;
-			}
-		}
-		else
-			AngleLockCnt = 0;
+//		if( fabs(IMU.Pitch) <= Safe_Angle &&fabs (IMU.Roll)<=Safe_Angle )
+//		{
+//			AngleLockCnt++;
+//			if(AngleLockCnt > 800u)
+//			{
+//				AngleLockCnt = 0;
+//				Fly_sta = FlyStaFlying;
+//			}
+//		}
+//		else
+//			AngleLockCnt = 0;
 		return;
 	}
 	else if(Fly_sta == FlyStaAngleErr) //螺旋桨开始减速，容错
@@ -66,17 +66,17 @@ void Control(void)
 	/**********************/
 	else if(Fly_sta == FlyStaFlying) //飞行状态，进行数据计算
 	{
-		 if(fabs(IMU.Pitch)>MAX_Angle || fabs(IMU.Roll) >MAX_Angle )//飞行时突然出现大角度 ，进入角度错误状态
-	   {
-			  flag_angle_err_cnt++;
-		    if(flag_angle_err_cnt>200u)
-		     { 
-			     flag_angle_err_cnt=0;
-			     Fly_sta = FlyStaAngleErr;
-		     }
-	   }
-	   else 
-			 flag_angle_err_cnt=0;
+//		 if(fabs(IMU.Pitch)>MAX_Angle || fabs(IMU.Roll) >MAX_Angle )//飞行时突然出现大角度 ，进入角度错误状态
+//	   {
+//			  flag_angle_err_cnt++;
+//		    if(flag_angle_err_cnt>200u)
+//		     { 
+//			     flag_angle_err_cnt=0;
+//			     Fly_sta = FlyStaAngleErr;
+//		     }
+//	   }
+//	   else 
+//			 flag_angle_err_cnt=0;
     fly_thro_min=RC_ctrl.height;
 	  PIDOutput.pitch = Pitch_rate_PID.Output;
 	  PIDOutput.roll  = Roll_rate_PID.Output;

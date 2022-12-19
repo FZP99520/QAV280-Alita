@@ -31,7 +31,7 @@ void PID_Cal_Update(void)
 	//
 	if(Fly_sta!=FlyStaFlying)
   {
-	  Target_Yaw = IMU.Yaw;
+//	  Target_Yaw = IMU.Yaw;
 	  return;
 	}
 //	RC_ctrl.exp_roll=((float)RC_ctrl.roll-1500u)*0.03f; //去掉油门偏移，转化成° 0.05=25°/500 500是油门最大量
@@ -49,18 +49,18 @@ void PID_Cal_Update(void)
 	//位置控制
 	
 	//角度控制计算
-	PID_Position_Cal(&Roll_angle_PID,Target_Roll,IMU.Roll,100.0f,90.0f);   //最大期望速度 90度/s
-	PID_Position_Cal(&Pitch_angle_PID,Target_Pitch,IMU.Pitch,100.0f,90.0f); //最大期望速度 90度/s
+	PID_Position_Cal(&Roll_angle_PID,Target_Roll,gsIMU_Data.f32Roll,100.0f,90.0f);   //最大期望速度 90度/s
+	PID_Position_Cal(&Pitch_angle_PID,Target_Pitch,gsIMU_Data.f32Pitch,100.0f,90.0f); //最大期望速度 90度/s
 	//速率PID计算
-	PID_Position_Cal(&Roll_rate_PID,Roll_angle_PID.Output, IMU_Data.gy,50,180.0f);
-	PID_Position_Cal(&Pitch_rate_PID,Pitch_angle_PID.Output,IMU_Data.gx,50,180.0f);
+	PID_Position_Cal(&Roll_rate_PID,Roll_angle_PID.Output, gsMPU_Data.f32Gyro_y,50,180.0f);
+	PID_Position_Cal(&Pitch_rate_PID,Pitch_angle_PID.Output,gsMPU_Data.f32Gyro_y,50,180.0f);
 			 /************Yaw PID Caculation*********/
 		RC_ctrl.exp_yaw_rate=((float)RC_ctrl.yaw-1500.0f)*0.06f; //去掉油门偏移，转化成° 0.06=30°/500 500是油门最大量
 	  if(fabs((float)RC_ctrl.yaw-1500.0f) < 10.0f )
 	 {
 		 if(YawLockState == 0)
 		 {
-			 Target_Yaw = IMU.Yaw;
+			 Target_Yaw = gsIMU_Data.f32Yaw;
 			 YawLockState = 1;
 		 }
 	 }
@@ -70,8 +70,8 @@ void PID_Cal_Update(void)
 		 Target_Yaw += RC_ctrl.exp_yaw_rate*DT; //把输入偏航角油门积分成角度
 		 Target_Yaw=To_180_degrees(Target_Yaw);
 	 }
-	  PID_Yaw_Cal(&Yaw_angle_PID,Target_Yaw,IMU.Yaw,100.0f,30.0f);
-	  PID_Yaw_Cal(&Yaw_rate_PID,Yaw_angle_PID.Output,IMU_Data.gz,10.0f,100.0f);
+	  PID_Yaw_Cal(&Yaw_angle_PID,Target_Yaw,gsIMU_Data.f32Yaw,100.0f,30.0f);
+	  PID_Yaw_Cal(&Yaw_rate_PID,Yaw_angle_PID.Output,gsMPU_Data.f32Gyro_z,10.0f,100.0f);
 	
 }
 //位置式PID计算函数

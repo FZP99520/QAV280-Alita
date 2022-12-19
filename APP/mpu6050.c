@@ -21,11 +21,12 @@
 #endif
 
 #define Ka 0.08f
-struct MPU_Data_TypeDef_s gsMPU_Data =
-{
-    .eAccelCali_Status = E_DevCali_Null;
-    .eGyroCali_Status = E_DevCali_Null;
-};
+//struct MPU_Data_TypeDef_s gsMPU_Data =
+//{
+//    .eAccelCali_Status = E_DevCali_Null;
+//    .eGyroCali_Status = E_DevCali_Null;
+//};
+MPU_Data_TypeDef gsMPU_Data;
 #define  GyroOffsetNum   200
 #define  AccelOffsetNum  200
 
@@ -58,6 +59,8 @@ E_DevInit_Status_TypeDef MPU6050_Init(void) //初始化
     if(dev_id != 0x68 )
     {
       //DebugLog("[ERROR]MPU6050 Init Fail:Device ID != 0x68\n");
+      gsMPU_Data.eAccelInit_Status = E_DevInit_Status_Fail;
+      gsMPU_Data.eGyroInit_Status = E_DevInit_Status_Fail;
       return E_DevInit_Status_Fail;
     }
     _MPU_Write_Data(PWR_MGMT_1, 0x80);//复位
@@ -79,6 +82,9 @@ E_DevInit_Status_TypeDef MPU6050_Init(void) //初始化
     _MPU_Write_Data(INT_EN,0x00);  //设置中断,closed
     //DebugLog("[OK]MPU6050 Init OK~\n");
 
+    gsMPU_Data.eAccelInit_Status = E_DevInit_Status_Done;
+    gsMPU_Data.eGyroInit_Status = E_DevInit_Status_Done;
+
     return E_DevInit_Status_Done;
 }
 E_DevUpdate_Ret_TypeDef MPU_Data_Update(void)
@@ -91,7 +97,7 @@ E_DevUpdate_Ret_TypeDef MPU_Data_Update(void)
         gsMPU_Data.bGet_ORG_DataOK = FALSE;
         return E_DevUpdate_Fail;
     }
-    if(gsMPU_Data.eAccelCali_Status == E_DevCali_Req || gsMPU_Data.eAccelCali_Status == E_DevCali_Doing \
+    if(gsMPU_Data.eAccelCali_Status == E_DevCali_Req || gsMPU_Data.eAccelCali_Status == E_DevCali_Doing ||\
         gsMPU_Data.eGyroCali_Status == E_DevCali_Req || gsMPU_Data.eGyroCali_Status == E_DevCali_Doing)
     {
         if(gsMPU_Data.eAccelCali_Status == E_DevCali_Req || gsMPU_Data.eAccelCali_Status == E_DevCali_Doing)
@@ -103,10 +109,10 @@ E_DevUpdate_Ret_TypeDef MPU_Data_Update(void)
             _MPU_GET_GYRO_OFFSET(&gsMPU_Data,TRUE,TRUE);
         }
         //需要校准时不做四元数解算
-        IMU.q0 = 1.0f;
-        IMU.q1 = 0;
-        IMU.q2 = 0;
-        IMU.q3 = 0;
+        gsIMU_Data.f32q0 = 1.0f;
+        gsIMU_Data.f32q1 = 0;
+        gsIMU_Data.f32q2 = 0;
+        gsIMU_Data.f32q3 = 0;
     }
     gsMPU_Data.s16ACCEL_X = gsMPU_Data.s16ACCEL_X - gsMPU_Data.s16os_accel_x;
     gsMPU_Data.s16ACCEL_Y = gsMPU_Data.s16ACCEL_Y - gsMPU_Data.s16os_accel_x;
@@ -122,11 +128,11 @@ E_DevUpdate_Ret_TypeDef MPU_Data_Update(void)
     gsMPU_Data.s16GYRO_Y = MoveAvarageFilter(&Filter_Gyro_Y,gsMPU_Data.s16GYRO_Y);//滑动平均滤波
     gsMPU_Data.s16GYRO_Z = MoveAvarageFilter(&Filter_Gyro_Z,gsMPU_Data.s16GYRO_Z);//滑动平均滤波
 
-    gsMPU_Data.fgx = gsMPU_Data.s16GYRO_X*GyroCoefficient;
-    gsMPU_Data.fgy = gsMPU_Data.s16GYRO_Y*GyroCoefficient;
-    gsMPU_Data.fgz = gsMPU_Data.s16GYRO_Z*GyroCoefficient;
+    gsMPU_Data.f32Gyro_x = gsMPU_Data.s16GYRO_X*GyroCoefficient;
+    gsMPU_Data.f32Gyro_y = gsMPU_Data.s16GYRO_Y*GyroCoefficient;
+    gsMPU_Data.f32Gyro_z = gsMPU_Data.s16GYRO_Z*GyroCoefficient;
 
-    IMU_Update(gsMPU_Data,MAG_Data.yaw,1);
+    //IMU_Update(gsMPU_Data,MAG_Data.yaw,1);
 
     return E_DevUpdate_Ok;
 }
@@ -157,26 +163,26 @@ static E_DevReadWrite_Ret_TypeDef _MPU_RD_ACCEL_GYRO(MPU_Data_TypeDef* pMPU)
     }
 }
 /*************************/
-static E_DevCali_Status_TypeDef _MPU_GET_ACCEL_OFFSET(MPU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller)
+static E_DevCali_Status_TypeDef _MPU_GET_ACCEL_OFFSET(MPU_Data_TypeDef* psMPU_Data, u8 bSave2Flash, u8 bEcho2Controller)
 {
     u8 i;
     u16 buff[3];
     static s32 Accel[3]={0,0,0};
     static u16 count=0;
-    if(psIMU->eAccelCali_Status == E_DevCali_Req )
+    if(psMPU_Data->eAccelCali_Status == E_DevCali_Req )
     {
         if(count >= AccelOffsetNum)
         {
-            psIMU->eAccelCali_Status = E_DevCali_Finished;
-            psIMU->s16os_accel_x = Accel[0]/count;
-            psIMU->s16os_accel_y = Accel[1]/count;
-            psIMU->s16os_accel_z = Accel[2]/count;
+            psMPU_Data->eAccelCali_Status = E_DevCali_Finished;
+            psMPU_Data->s16os_accel_x = Accel[0]/count;
+            psMPU_Data->s16os_accel_y = Accel[1]/count;
+            psMPU_Data->s16os_accel_z = Accel[2]/count;
             /*********Save Data to Flash**************/
             if(bSave2Flash)
             {
-                buff[0] = (u16)psIMU->s16os_accel_x;
-                buff[1] = (u16)psIMU->s16os_accel_y;
-                buff[2] = (u16)psIMU->s16os_accel_z;
+                buff[0] = (u16)psMPU_Data->s16os_accel_x;
+                buff[1] = (u16)psMPU_Data->s16os_accel_y;
+                buff[2] = (u16)psMPU_Data->s16os_accel_z;
                 FlashErase(MPUAccelOffsetAddr,1);
                 i = FlashWrite(MPUAccelOffsetAddr,buff,3); //Save Offset Data
             /*************************************/
@@ -191,10 +197,10 @@ static E_DevCali_Status_TypeDef _MPU_GET_ACCEL_OFFSET(MPU_Data_TypeDef* psIMU, u
         }
         else
         {
-            psIMU->eAccelCali_Status = E_DevCali_Doing;
-            Accel[0] += psIMU->s16ACCEL_X;
-            Accel[1] += psIMU->s16ACCEL_Y;
-            Accel[2] += psIMU->s16ACCEL_Z-Range_Acc_Setting;
+            psMPU_Data->eAccelCali_Status = E_DevCali_Doing;
+            Accel[0] += psMPU_Data->s16ACCEL_X;
+            Accel[1] += psMPU_Data->s16ACCEL_Y;
+            Accel[2] += psMPU_Data->s16ACCEL_Z-Range_Acc_Setting;
             count++;
             return E_DevCali_Doing;
         }
@@ -202,26 +208,26 @@ static E_DevCali_Status_TypeDef _MPU_GET_ACCEL_OFFSET(MPU_Data_TypeDef* psIMU, u
     else 
         return E_DevCali_Null;
 }
-static E_DevCali_Status_TypeDef _MPU_GET_GYRO_OFFSET(MPU_Data_TypeDef* psIMU, u8 bSave2Flash, u8 bEcho2Controller)
+static E_DevCali_Status_TypeDef _MPU_GET_GYRO_OFFSET(MPU_Data_TypeDef* psMPU_Data, u8 bSave2Flash, u8 bEcho2Controller)
 {
     u8 i;
     u16 buff[3];
     static s32 Gyro[3]={0,0,0};
     static u16 count=0;
-    if(psIMU->eGyroCali_Status == E_DevCali_Req)
+    if(psMPU_Data->eGyroCali_Status == E_DevCali_Req)
     {
         if(count >= GyroOffsetNum)
         {
-            psIMU->eGyroCali_Status = E_DevCali_Finished;
-            psIMU->s16os_gyro_x = Gyro[0]/count;
-            psIMU->s16os_gyro_y = Gyro[1]/count;
-            psIMU->s16os_gyro_z = Gyro[2]/count;
+            psMPU_Data->eGyroCali_Status = E_DevCali_Finished;
+            psMPU_Data->s16os_gyro_x = Gyro[0]/count;
+            psMPU_Data->s16os_gyro_y = Gyro[1]/count;
+            psMPU_Data->s16os_gyro_z = Gyro[2]/count;
             //Save Data to flash
             if(bSave2Flash)
             {
-                buff[0] = (u16)psIMU->s16os_gyro_x;
-                buff[1] = (u16)psIMU->s16os_gyro_y;
-                buff[2] = (u16)psIMU->s16os_gyro_z;
+                buff[0] = (u16)psMPU_Data->s16os_gyro_x;
+                buff[1] = (u16)psMPU_Data->s16os_gyro_y;
+                buff[2] = (u16)psMPU_Data->s16os_gyro_z;
                 FlashErase(MPUGyroOffsetAddr,1);
                 i = FlashWrite(MPUGyroOffsetAddr,buff,3);
             //*************************************//
@@ -236,10 +242,10 @@ static E_DevCali_Status_TypeDef _MPU_GET_GYRO_OFFSET(MPU_Data_TypeDef* psIMU, u8
         }
         else
         {
-            psIMU->eGyroCali_Status = E_DevCali_Doing;
-            Gyro[0] += psIMU->s16GYRO_X;
-            Gyro[1] += psIMU->s16GYRO_Y;
-            Gyro[2] += psIMU->s16GYRO_Z;
+            psMPU_Data->eGyroCali_Status = E_DevCali_Doing;
+            Gyro[0] += psMPU_Data->s16GYRO_X;
+            Gyro[1] += psMPU_Data->s16GYRO_Y;
+            Gyro[2] += psMPU_Data->s16GYRO_Z;
             count++;
             return E_DevCali_Doing;
         }
